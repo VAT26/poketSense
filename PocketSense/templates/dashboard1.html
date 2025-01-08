@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f7f6;
+        }
+        header {
+            background-color: #343a40;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        section {
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+        .card-header {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .friend-list, .transaction-list, .spending-analysis {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .friend-list li, .transaction-list li, .spending-analysis li {
+            margin-bottom: 8px;
+        }
+        form input[type="number"], form textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        form select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Welcome to Your Dashboard</h1>
+</header>
+
+<section>
+    <div class="card">
+        <div class="card-header">Your Friends</div>
+        <ul class="friend-list">
+            {% for friend in friends %}
+                <li>{{ friend.friend.username }}</li>
+            {% empty %}
+                <li>You have no friends added yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+        <!-- Display Friend Requests -->
+        <div class="card">
+            <div class="card-header">Friend Requests</div>
+            <ul class="friend-list">
+                {% if pending_requests %}
+                    {% for request in pending_requests %}
+                        <li>
+                            {{ request.user.username }} 
+                            <a href="{% url 'accept_friend_request' request.user.id %}" class="button">Accept</a>
+                            <a href="{% url 'reject_friend_request' request.user.id %}" class="button button-danger">Reject</a>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li>You have no pending friend requests.</li>
+                {% endif %}
+            </ul>
+        </div>
+    <!-- Display List of Users to Send Friend Request -->
+    <div class="card">
+        <div class="card-header">Send Friend Requests</div>
+        <ul class="friend-list">
+            {% for user in users %}
+                {% if user != request.user %}
+                    {% if not user_friend_requests|get_item:user %}
+                        <li>
+                            {{ user.username }}
+                            <a href="{% url 'send_friend_request' user.id %}" class="button">Send Friend Request</a>
+                        </li>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>    
+    <div class="card">
+        <div class="card-header">Transactions (Money Split)</div>
+        <ul class="transaction-list">
+            {% for transaction in transactions %}
+                <li>{{ transaction.amount }} from {{ transaction.user.username }} to {{ transaction.friend.username }} - {{ transaction.description }}</li>
+            {% empty %}
+                <li>No transactions found.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Monthly Spending Analysis</div>
+        <ul class="spending-analysis">
+            {% for item in spending_by_category %}
+                <li>{{ item.category__name }}: ${{ item.total_spent }}</li>
+            {% empty %}
+                <li>No spending recorded this month.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+
+<section>
+    <h3>Split Money</h3>
+    <form method="POST" action="{% url 'split_money' %}">
+        {% csrf_token %}
+        <label for="amount">Amount:</label>
+        <input type="number" name="amount" id="amount" required>
+
+        <label for="description">Description:</label>
+        <textarea name="description" id="description" rows="4" required></textarea>
+
+        <label for="friends">Select Friends:</label>
+        <select name="friends" id="friends" multiple required>
+            {% for friend in friends %}
+                <option value="{{ friend.friend.id }}">{{ friend.friend.username }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="button">Split Money</button>
+    </form>
+</section>
+
+<section>
+    <a href="{% url 'user_logout' %}" class="button">Logout</a>
+</section>
+
+</body>
+</html>

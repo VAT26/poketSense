@@ -1,0 +1,180 @@
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+        }
+        .card {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button-danger {
+            background-color: #f44336;
+        }
+        .button-danger:hover {
+            background-color: #e53935;
+        }
+        .friend-list, .transaction-list, .spending-list { 
+            list-style-type: none;
+            padding: 0;
+        }
+        .friend-list li, .transaction-list li, .spending-list li {
+            margin: 8px 0;
+        }
+        .transaction-list li {
+            font-style: italic;
+        }
+        .spending-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .spending-amount {
+            font-weight: bold;
+            color: #2a9d8f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Your Dashboard, {{ request.user.username }}</h1>
+
+        <!-- Display Friends -->
+        <div class="card">
+            <div class="card-header">Your Friends</div>
+            <ul class="friend-list">
+                {% if friends %}
+                    {% for friend in friends %}
+                        <li>{{ friend.username }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>You have no friends added yet.</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Display Friend Requests -->
+        <div class="card">
+            <div class="card-header">Friend Requests</div>
+            <ul class="friend-list">
+                {% if pending_requests %}
+                    {% for request in pending_requests %}
+                        <li>
+                            {{ request.user.username }} 
+                            <a href="{% url 'accept_friend_request' request.user.id %}" class="button">Accept</a>
+                            <a href="{% url 'reject_friend_request' request.user.id %}" class="button button-danger">Reject</a>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li>You have no pending friend requests.</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Display List of Users to Send Friend Request -->
+        <div class="card">
+            <div class="card-header">Send Friend Requests</div>
+            <ul class="friend-list">
+                {% for user in users %}
+                    {% if user != request.user %}
+                        {% if user.id not in user_friend_requests %}
+                            <li>
+                                {{ user.username }}
+                                <a href="{% url 'send_friend_request' user.id %}" class="button">Send Friend Request</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                <li>You have no pending friend requests.</li>
+            </ul>
+        </div>
+
+        <!-- Transactions (Money Split) -->
+        <div class="card">
+            <div class="card-header">Transactions (Money Split)</div>
+            <ul class="transaction-list">
+                {% if transactions %}
+                    {% for transaction in transactions %}
+                        <li>{{ transaction.amount }} - {{ transaction.description }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>No transactions found.</li>
+                {% endif %}
+            </ul>
+        </div>
+<section>
+    <h3>Split Money</h3>
+    <form method="POST" action="{% url 'split_money' %}">
+        {% csrf_token %}
+        <label for="amount">Amount:</label>
+        <input type="number" name="amount" id="amount" required>
+
+        <label for="description">Description:</label>
+        <textarea name="description" id="description" rows="4" required></textarea>
+
+        <label for="friends">Select Friends:</label>
+        <select name="friends" id="friends" multiple required>
+            {% for friend in friends %}
+                <option value="{{ friend.id }}">{{ friend.username }}</option>
+            {% endfor %}
+</select>
+<button type="submit" class="button">Split Money</button>
+        <!-- Monthly Spending Analysis -->
+        <div class="card">
+            <div class="card-header">Monthly Spending Analysis</div>
+            <ul class="spending-list">
+                {% if spending_by_category %}
+                    {% for category in spending_by_category %}
+                        <li>
+                            <span>{{ category.category__name }}:</span> 
+                            <span class="spending-amount">${{ category.total_spent }}</span>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li>No spending recorded this month.</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Logout -->
+        <div class="card">
+            <a href="{% url 'user_logout' %}" class="button">Logout</a>
+        </div>
+    </div>
+</body>
+</html>
